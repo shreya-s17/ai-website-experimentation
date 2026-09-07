@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumen v3 Pro</title>
+<style>
+body{margin:0;background:#05070A;color:#eef2ff;font-family:Inter,Arial,sans-serif;overflow-x:hidden}
+canvas#bg{position:fixed;inset:0;z-index:-1}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px}
+h1{font-size:clamp(50px,8vw,110px);margin:0}
+.grad{background:linear-gradient(90deg,#7dd3fc,#c084fc,#a7f3d0);-webkit-background-clip:text;color:transparent}
+.glass{background:rgba(255,255,255,.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:24px}
+.wrap{width:min(1200px,92%)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.card{padding:24px}
+.metric{font-size:42px;font-weight:700}
+section{padding:90px 0}
+.network{height:400px;position:relative}
+.node{position:absolute;padding:12px 18px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.center{left:50%;top:50%;transform:translate(-50%,-50%);padding:40px;border-radius:50%}
+.n1{top:10%;left:45%}.n2{left:15%;top:45%}.n3{right:15%;top:45%}.n4{bottom:10%;left:45%}
+.line{position:absolute;background:rgba(125,211,252,.25);height:2px;transform-origin:left center}
+.feed{height:260px;overflow:hidden}
+.feed div{padding:10px;border-left:2px solid #7dd3fc;margin:8px 0}
+.pipeline{display:flex;justify-content:center;gap:15px;flex-wrap:wrap}
+.stage{padding:16px 20px}
+.memory{display:flex;justify-content:center;gap:40px;flex-wrap:wrap}
+.mem{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.orb{width:260px;height:260px;border-radius:50%;margin:auto;position:relative;
+background:radial-gradient(circle,#7dd3fc,#c084fc,#05070A);animation:spin 16s linear infinite}
+.orb:before,.orb:after{content:'';position:absolute;border:1px solid rgba(255,255,255,.25);border-radius:50%;inset:-20px}
+.orb:after{inset:-45px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<div class="hero">
+<div class="wrap">
+<h1>The First <span class="grad">Autonomous Environment</span></h1>
+<p>Perceiving. Predicting. Planning. Acting.</p>
+<div class="orb"></div>
+</div>
+</div>
+
+<div class="wrap">
+
+<section>
+<div class="grid">
+<div class="glass card"><div class="metric" id="d1">1482</div>Decisions</div>
+<div class="glass card"><div class="metric" id="d2">14</div>Agents</div>
+<div class="glass card"><div class="metric">97.2%</div>Confidence</div>
+</div>
+</section>
+
+<section>
+<h2>Live Agent Network</h2>
+<div class="network glass">
+<div class="node center">LUMEN</div>
+<div class="node n1">Planning</div>
+<div class="node n2">Memory</div>
+<div class="node n3">Action</div>
+<div class="node n4">Learning</div>
+</div>
+</section>
+
+<section>
+<h2>Autonomous Thought Stream</h2>
+<div class="glass card feed" id="feed"></div>
+</section>
+
+<section>
+<h2>World Model</h2>
+<div class="pipeline">
+<div class="glass stage">Perception</div>
+<div class="glass stage">Memory</div>
+<div class="glass stage">Prediction</div>
+<div class="glass stage">Planning</div>
+<div class="glass stage">Action</div>
+<div class="glass stage">Learning</div>
+</div>
+</section>
+
+<section>
+<h2>AI Memory Constellation</h2>
+<div class="memory">
+<div class="glass mem">Sleep</div>
+<div class="glass mem">Light</div>
+<div class="glass mem">Focus</div>
+<div class="glass mem">Health</div>
+</div>
+</section>
+
+</div>
+
+<script>
+const c=document.getElementById('bg'),x=c.getContext('2d');
+function r(){c.width=innerWidth;c.height=innerHeight}r();onresize=r;
+let pts=[...Array(120)].map(()=>({x:Math.random()*c.width,y:Math.random()*c.height}));
+function draw(){
+x.clearRect(0,0,c.width,c.height);
+pts.forEach(p=>{x.fillStyle='rgba(125,211,252,.5)';x.fillRect(p.x,p.y,2,2);});
+requestAnimationFrame(draw);
+}draw();
+
+setInterval(()=>{
+document.getElementById('d1').textContent=+document.getElementById('d1').textContent+1;
+},2500);
+
+const msgs=[
+'Occupancy increased',
+'Predicting lighting adjustment',
+'Confidence 92%',
+'Action executed',
+'Learning new routine',
+'Sleep mode predicted'
+];
+const feed=document.getElementById('feed');
+function add(){
+const d=document.createElement('div');
+d.textContent=new Date().toLocaleTimeString()+' — '+msgs[Math.floor(Math.random()*msgs.length)];
+feed.prepend(d);
+while(feed.children.length>12)feed.removeChild(feed.lastChild);
+}
+setInterval(add,2000); add();
+</script>
+</body></html>

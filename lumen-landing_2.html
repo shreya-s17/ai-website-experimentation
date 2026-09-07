@@ -1,0 +1,2525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lumen — Ambient Intelligence for Your Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14;
+    --bg-soft:#10141C;
+    --surface:#141925;
+    --surface-2:#191F2D;
+    --border:rgba(255,255,255,0.09);
+    --border-soft:rgba(255,255,255,0.05);
+    --text:#EDEEF2;
+    --text-muted:#9098AC;
+    --text-faint:#5B6478;
+    --blue:#7C9EFF;
+    --pink:#FF8FCE;
+    --mint:#7CFFD6;
+    --gradient:linear-gradient(135deg,var(--blue) 0%,var(--pink) 52%,var(--mint) 100%);
+    --font-display:'Fraunces',serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+    --maxw:1180px;
+    --safe-bottom:env(safe-area-inset-bottom, 0px);
+    --safe-top:env(safe-area-inset-top, 0px);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    padding-bottom:calc(34px + var(--safe-bottom));
+  }
+  a{color:inherit;text-decoration:none;}
+  img,svg{display:block;max-width:100%;}
+
+  ::selection{background:var(--blue);color:#06070A;}
+
+  :focus-visible{
+    outline:2px solid var(--mint);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  .lm-wrap{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  /* ---------- noise overlay ---------- */
+  .lm-noise{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:60;
+    opacity:0.035;
+    mix-blend-mode:overlay;
+  }
+
+  /* ---------- ambient background blobs ---------- */
+  .lm-ambient{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    z-index:0;
+    pointer-events:none;
+  }
+  .lm-blob{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(60px);
+    opacity:0.16;
+  }
+  .lm-blob.b1{width:560px;height:560px;background:var(--blue);top:-180px;left:-120px;animation:drift1 26s ease-in-out infinite alternate;}
+  .lm-blob.b2{width:480px;height:480px;background:var(--pink);top:120px;right:-160px;animation:drift2 30s ease-in-out infinite alternate;}
+  .lm-blob.b3{width:420px;height:420px;background:var(--mint);bottom:-200px;left:30%;animation:drift3 34s ease-in-out infinite alternate;}
+  @keyframes drift1{from{transform:translate(0,0);}to{transform:translate(60px,40px);}}
+  @keyframes drift2{from{transform:translate(0,0);}to{transform:translate(-50px,60px);}}
+  @keyframes drift3{from{transform:translate(0,0);}to{transform:translate(40px,-30px);}}
+
+  /* ---------- neural network canvas ---------- */
+  .lm-network-canvas{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    opacity:0.55;
+  }
+
+  /* ---------- scroll reveal ---------- */
+  .lm-reveal{
+    opacity:0;
+    transform:translateY(20px);
+    transition:opacity .7s ease, transform .7s ease;
+  }
+  .lm-reveal.lm-revealed{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  /* ---------- nav ---------- */
+  .lm-nav{
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:50;
+    backdrop-filter:blur(18px) saturate(160%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    background:rgba(11,14,20,0.38);
+    border-bottom:1px solid rgba(255,255,255,0.07);
+    overflow:hidden;
+  }
+  .lm-nav-scan{
+    position:absolute;
+    bottom:0; left:-30%;
+    width:30%; height:1px;
+    background:linear-gradient(90deg, transparent, var(--mint), transparent);
+    animation:navscan 5s linear infinite;
+    opacity:0.8;
+  }
+  @keyframes navscan{from{left:-30%;}to{left:100%;}}
+  .lm-nav-inner{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:18px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .lm-logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:500;
+    letter-spacing:0.02em;
+  }
+  .lm-logo-mark{
+    width:18px;height:18px;border-radius:50%;
+    background:var(--gradient);
+    box-shadow:0 0 14px rgba(124,158,255,0.6);
+  }
+  .lm-nav-links{
+    display:flex;
+    gap:34px;
+    font-size:14px;
+    color:var(--text-muted);
+  }
+  .lm-nav-links a{transition:color .2s;}
+  .lm-nav-links a:hover{color:var(--text);}
+  .lm-nav-cta{
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:9px 18px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    transition:border-color .2s, background .2s;
+  }
+  .lm-nav-cta:hover{border-color:var(--blue);background:rgba(124,158,255,0.08);}
+
+  .lm-nav-toggle-input{display:none;}
+  .lm-nav-toggle-label{
+    display:none;
+    font-size:22px;
+    cursor:pointer;
+    padding:11px;
+    margin:-11px;
+    line-height:1;
+  }
+
+  @media (max-width:760px){
+    .lm-nav-links{
+      position:absolute;
+      top:64px; left:0; right:0;
+      flex-direction:column;
+      gap:0;
+      background:var(--bg-soft);
+      border-bottom:1px solid var(--border-soft);
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .25s ease;
+    }
+    .lm-nav-links a{padding:14px 32px;border-top:1px solid var(--border-soft);}
+    .lm-nav-toggle-input:checked ~ .lm-nav-links{max-height:260px;}
+    .lm-nav-toggle-label{display:block;}
+    .lm-nav-cta{display:none;}
+  }
+
+  /* ---------- hero ---------- */
+  .lm-hero{
+    position:relative;
+    padding:172px 0 120px;
+  }
+  .lm-hero-grid{
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    gap:40px;
+    align-items:center;
+  }
+  .lm-eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--mint);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .lm-eyebrow::before{
+    content:'';
+    width:6px;height:6px;border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 8px var(--mint);
+  }
+  .lm-h1{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:clamp(38px,5.4vw,68px);
+    line-height:1.05;
+    letter-spacing:-0.01em;
+    margin:0 0 22px;
+    max-width:620px;
+  }
+  .lm-h1 em{
+    font-style:italic;
+    font-weight:300;
+    background:var(--gradient);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .lm-sub{
+    font-size:17px;
+    line-height:1.6;
+    color:var(--text-muted);
+    max-width:480px;
+    margin:0 0 36px;
+  }
+  .lm-cta-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .lm-btn-primary{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15px;
+    padding:14px 26px;
+    border-radius:999px;
+    background:var(--text);
+    color:#0B0E14;
+    border:none;
+    cursor:pointer;
+    transition:transform .15s, box-shadow .2s;
+  }
+  .lm-btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,158,255,0.25);}
+  .lm-btn-ghost{
+    font-family:var(--font-body);
+    font-weight:500;
+    font-size:15px;
+    padding:14px 22px;
+    border-radius:999px;
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--border);
+    cursor:pointer;
+    transition:border-color .2s, background .2s;
+  }
+  .lm-btn-ghost:hover{border-color:var(--blue);background:rgba(124,158,255,0.06);}
+  .lm-micro{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+  }
+
+  /* ---------- orb ---------- */
+  .lm-orb-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:420px;
+  }
+  .lm-orb-stage{
+    position:relative;
+    width:280px;
+    height:280px;
+    transition:transform .3s ease-out;
+  }
+  .lm-orb-ring{
+    position:absolute;
+    inset:-34px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .lm-orb-ring.r2{inset:-64px;border-color:rgba(255,255,255,0.05);}
+  .lm-orb-ring-spin{
+    position:absolute;
+    inset:-34px;
+    border-radius:50%;
+    background:conic-gradient(from 0deg, transparent 0deg, rgba(124,158,255,0.5) 40deg, transparent 90deg, rgba(255,143,206,0.4) 200deg, transparent 260deg);
+    animation:spin 14s linear infinite;
+    -webkit-mask:radial-gradient(circle, transparent 60%, black 61%, black 64%, transparent 65%);
+    mask:radial-gradient(circle, transparent 60%, black 61%, black 64%, transparent 65%);
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .lm-orb-glass{
+    position:absolute;
+    inset:-10px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px);
+    border:1px solid rgba(255,255,255,0.16);
+  }
+  .lm-orb-core{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55), transparent 45%),
+      radial-gradient(circle at 70% 75%, var(--mint), transparent 60%),
+      radial-gradient(circle at 25% 75%, var(--pink), transparent 60%),
+      radial-gradient(circle at 65% 25%, var(--blue), transparent 55%),
+      #1a2030;
+    box-shadow:
+      0 0 70px rgba(124,158,255,0.35),
+      inset 0 0 50px rgba(0,0,0,0.4);
+    animation:breathe 5s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.035);}
+  }
+  .lm-orb-core.lm-pulse{animation:breathe 5s ease-in-out infinite, pulseGlow 1.1s ease-out 2;}
+  @keyframes pulseGlow{
+    0%{box-shadow:0 0 70px rgba(124,158,255,0.35), inset 0 0 50px rgba(0,0,0,0.4);}
+    50%{box-shadow:0 0 120px rgba(124,255,214,0.55), inset 0 0 50px rgba(0,0,0,0.4);}
+    100%{box-shadow:0 0 70px rgba(124,158,255,0.35), inset 0 0 50px rgba(0,0,0,0.4);}
+  }
+
+  .lm-orb-tag{
+    position:absolute;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-muted);
+    background:rgba(20,25,37,0.85);
+    border:1px solid var(--border);
+    padding:6px 10px;
+    border-radius:8px;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    white-space:nowrap;
+    transition:opacity .35s ease;
+  }
+  .lm-orb-tag.t1{top:6%;left:-12%;}
+  .lm-orb-tag.t2{bottom:10%;right:-18%;}
+  .lm-orb-tag.t3{top:48%;right:-30%;}
+
+  .lm-demo-bubble{
+    position:absolute;
+    bottom:-26px;
+    left:50%;
+    transform:translateX(-50%);
+    width:280px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 16px;
+    font-size:13.5px;
+    line-height:1.5;
+    color:var(--text);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  .lm-demo-bubble.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(10px);
+  }
+  .lm-thinking{
+    display:flex;
+    gap:5px;
+    align-items:center;
+  }
+  .lm-thinking span{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--text-muted);
+    animation:think 1.2s ease-in-out infinite;
+  }
+  .lm-thinking span:nth-child(2){animation-delay:.2s;}
+  .lm-thinking span:nth-child(3){animation-delay:.4s;}
+  @keyframes think{
+    0%,80%,100%{transform:scale(0.6);opacity:0.4;}
+    40%{transform:scale(1);opacity:1;}
+  }
+  .lm-demo-text::after{
+    content:'';
+    display:inline-block;
+    width:2px;height:13px;
+    background:var(--mint);
+    margin-left:2px;
+    vertical-align:-2px;
+    animation:caret 0.9s steps(1) infinite;
+  }
+  .lm-demo-text.lm-done::after{display:none;}
+  @keyframes caret{50%{opacity:0;}}
+
+  @media (max-width:860px){
+    .lm-hero-grid{grid-template-columns:1fr;gap:64px;}
+    .lm-hero{padding:140px 0 90px;}
+    .lm-orb-tag{display:none;}
+  }
+
+  /* ---------- section shells ---------- */
+  section{position:relative;padding:100px 0;}
+  .lm-section-head{
+    max-width:560px;
+    margin-bottom:56px;
+  }
+  .lm-h2{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:clamp(28px,3.6vw,42px);
+    line-height:1.15;
+    margin:0 0 14px;
+  }
+  .lm-section-sub{
+    color:var(--text-muted);
+    font-size:16px;
+    line-height:1.6;
+    margin:0;
+  }
+  .lm-divider{
+    height:1px;
+    background:var(--border-soft);
+    border:none;
+    margin:0;
+  }
+
+  /* ---------- autonomous activity panel ---------- */
+  .lm-activity-panel{
+    border-radius:20px;
+    padding:36px 40px;
+  }
+  .lm-activity-top{
+    display:flex;
+    gap:40px;
+    align-items:flex-end;
+    padding-bottom:26px;
+    border-bottom:1px solid var(--border-soft);
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .lm-activity-next{flex:1;min-width:220px;}
+  .lm-activity-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:9px;
+  }
+  .lm-activity-predict{
+    font-family:var(--font-display);
+    font-size:22px;
+    font-weight:400;
+    transition:opacity .35s ease;
+  }
+  .lm-activity-countdown, .lm-activity-stat{text-align:right;flex-shrink:0;}
+  .lm-activity-countdown .lm-count-num, .lm-activity-stat .lm-count-num{
+    font-family:var(--font-mono);
+    font-size:24px;
+    color:var(--mint);
+  }
+  .lm-activity-countdown .lm-count-label, .lm-activity-stat .lm-count-label{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--text-faint);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    margin-top:5px;
+  }
+  .lm-feed{
+    display:flex;
+    flex-direction:column;
+    height:200px;
+    overflow:hidden;
+  }
+  .lm-feed-row{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    padding:9px 2px;
+    opacity:0;
+    transform:translateY(-8px);
+    transition:opacity .4s ease, transform .4s ease;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .lm-feed-row.show{opacity:1;transform:translateY(0);}
+  .lm-feed-time{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+    flex-shrink:0;
+    width:60px;
+  }
+  .lm-feed-dot{
+    width:6px;height:6px;border-radius:50%;
+    flex-shrink:0;
+    margin-top:5px;
+  }
+  .lm-feed-action .lm-feed-dot{background:var(--blue);box-shadow:0 0 6px var(--blue);}
+  .lm-feed-sense .lm-feed-dot{background:var(--mint);box-shadow:0 0 6px var(--mint);}
+  .lm-feed-insight .lm-feed-dot{background:var(--pink);box-shadow:0 0 6px var(--pink);}
+  .lm-feed-text{
+    font-size:14px;
+    color:var(--text);
+  }
+  @media (max-width:640px){
+    .lm-activity-panel{padding:28px 24px;}
+    .lm-activity-top{gap:22px;}
+    .lm-activity-countdown, .lm-activity-stat{text-align:left;}
+  }
+
+  /* ---------- autonomous agents section ---------- */
+  .lm-agents-stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--text-faint);
+    margin-bottom:28px;
+  }
+  .lm-agents-grid{
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:20px;
+    align-items:stretch;
+  }
+  .lm-network-panel{
+    border-radius:18px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+  }
+  .lm-network-svg{width:100%;height:auto;}
+  .lm-agent-line{
+    stroke:rgba(255,255,255,0.14);
+    stroke-width:1;
+  }
+  .lm-agent-core{
+    fill:rgba(20,25,37,0.9);
+    stroke:var(--mint);
+    stroke-width:1.4;
+    animation:corepulse 2.4s ease-in-out infinite;
+  }
+  @keyframes corepulse{
+    0%,100%{stroke-opacity:0.6;}
+    50%{stroke-opacity:1;}
+  }
+  .lm-agent-core-label{
+    fill:var(--mint);
+    font-family:var(--font-mono);
+    font-size:10px;
+    text-anchor:middle;
+    letter-spacing:0.05em;
+  }
+  .lm-agent-node{
+    fill:rgba(20,25,37,0.9);
+    stroke-width:1.4;
+    animation:nodepulse 2.8s ease-in-out infinite;
+  }
+  .lm-agent-node.n-blue{stroke:var(--blue);}
+  .lm-agent-node.n-pink{stroke:var(--pink);}
+  .lm-agent-node.n-mint{stroke:var(--mint);}
+  @keyframes nodepulse{
+    0%,100%{r:15;}
+    50%{r:17;}
+  }
+  .lm-packet{
+    fill:var(--mint);
+  }
+  .lm-packet.c-blue{fill:var(--blue);}
+  .lm-packet.c-pink{fill:var(--pink);}
+  .lm-packet.c-mint{fill:var(--mint);}
+  .lm-agent-label{
+    fill:var(--text);
+    font-family:var(--font-body);
+    font-size:13px;
+    font-weight:600;
+    text-anchor:middle;
+  }
+  .lm-agent-status{
+    fill:var(--text-faint);
+    font-family:var(--font-mono);
+    font-size:10px;
+    text-anchor:middle;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+
+  .lm-reason-panel{
+    border-radius:18px;
+    padding:28px 26px;
+    display:flex;
+    flex-direction:column;
+  }
+  .lm-reason-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:20px;
+  }
+  .lm-reason-steps{
+    position:relative;
+    flex:1;
+    padding-left:18px;
+    min-height:160px;
+  }
+  .lm-reason-steps::before{
+    content:'';
+    position:absolute;
+    left:3px;
+    top:4px;
+    bottom:4px;
+    width:1px;
+    background:var(--border-soft);
+  }
+  .lm-reason-step{
+    position:relative;
+    padding-bottom:20px;
+    opacity:0;
+    transform:translateY(-6px);
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .lm-reason-step.show{opacity:1;transform:translateY(0);}
+  .lm-reason-step::before{
+    content:'';
+    position:absolute;
+    left:-18px;
+    top:4px;
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 6px var(--mint);
+  }
+  .lm-reason-time{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--text-faint);
+    display:block;
+    margin-bottom:2px;
+  }
+  .lm-reason-text{
+    font-size:14px;
+    color:var(--text);
+  }
+  @media (max-width:860px){
+    .lm-agents-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- senses ---------- */
+  .lm-senses-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+  }
+  .lm-sense-card{
+    background:rgba(20,25,37,0.4);
+    backdrop-filter:blur(18px) saturate(150%);
+    -webkit-backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px;
+    padding:30px 24px;
+  }
+  .lm-viz{
+    width:100%;
+    height:54px;
+    margin-bottom:22px;
+    display:flex;
+    align-items:flex-end;
+  }
+
+  /* voice — equalizer bars */
+  .lm-viz-voice{gap:5px;}
+  .lm-viz-voice span{
+    display:block;
+    width:5px;
+    border-radius:3px;
+    background:linear-gradient(180deg,var(--blue),rgba(124,158,255,0.15));
+    animation:eqbar 1.1s ease-in-out infinite;
+    transform-origin:bottom;
+  }
+  .lm-viz-voice span:nth-child(1){height:16px;animation-delay:0s;}
+  .lm-viz-voice span:nth-child(2){height:34px;animation-delay:.12s;}
+  .lm-viz-voice span:nth-child(3){height:48px;animation-delay:.24s;}
+  .lm-viz-voice span:nth-child(4){height:28px;animation-delay:.36s;}
+  .lm-viz-voice span:nth-child(5){height:40px;animation-delay:.48s;}
+  .lm-viz-voice span:nth-child(6){height:20px;animation-delay:.6s;}
+  @keyframes eqbar{0%,100%{transform:scaleY(0.35);}50%{transform:scaleY(1);}}
+
+  /* light — pulsing rings */
+  .lm-viz-light{position:relative;align-items:center;}
+  .lm-viz-light .lm-ring-pulse{
+    position:absolute;
+    left:0;
+    top:21px;
+    width:12px;height:12px;
+    border-radius:50%;
+    border:1px solid var(--pink);
+    animation:lightpulse 2.4s ease-out infinite;
+  }
+  .lm-viz-light .lm-ring-pulse.r2{animation-delay:.8s;}
+  .lm-viz-light .lm-ring-pulse.r3{animation-delay:1.6s;}
+  .lm-viz-light .lm-ring-dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--pink);
+    box-shadow:0 0 12px var(--pink);
+  }
+  @keyframes lightpulse{
+    0%{width:10px;height:10px;opacity:0.9;transform:translate(0,0);}
+    100%{width:54px;height:54px;opacity:0;transform:translate(-21px,-21px);}
+  }
+
+  /* presence — radar sweep */
+  .lm-viz-presence{
+    position:relative;
+    border-radius:50%;
+    width:54px;height:54px;
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .lm-viz-presence .lm-sweep{
+    position:absolute;
+    inset:0;
+    background:conic-gradient(from 0deg, var(--mint), transparent 35%);
+    animation:radarspin 2.6s linear infinite;
+    opacity:0.75;
+  }
+  .lm-viz-presence .lm-blip{
+    position:absolute;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 6px var(--mint);
+  }
+  .lm-viz-presence .lm-blip.b1{top:14px;left:32px;}
+  .lm-viz-presence .lm-blip.b2{top:36px;left:16px;}
+  @keyframes radarspin{to{transform:rotate(360deg);}}
+
+  /* routine — flowing sparkline */
+  .lm-viz-routine svg{width:100%;height:54px;overflow:visible;}
+  .lm-viz-routine path{
+    fill:none;
+    stroke:#C9B8FF;
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-dasharray:6 5;
+    animation:dashflow 5s linear infinite;
+  }
+  @keyframes dashflow{to{stroke-dashoffset:-220;}}
+  .lm-sense-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:10px;
+  }
+  .lm-sense-title{
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  .lm-sense-text{
+    font-size:14.5px;
+    line-height:1.55;
+    color:var(--text-muted);
+    margin:0;
+  }
+  .lm-sense-live{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--border-soft);
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .lm-live-num{
+    font-family:var(--font-mono);
+    font-size:14.5px;
+    color:var(--text);
+    transition:opacity .25s ease;
+  }
+  .lm-live-tag{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+  }
+  @media (max-width:860px){
+    .lm-senses-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:540px){
+    .lm-senses-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- day timeline ---------- */
+  .lm-day{
+    display:grid;
+    grid-template-columns:140px 1fr;
+    gap:0;
+  }
+  .lm-day-row{
+    display:grid;
+    grid-template-columns:140px 1fr;
+    grid-column:1 / -1;
+    padding:30px 0;
+    border-top:1px solid var(--border-soft);
+  }
+  .lm-day-row:last-child{border-bottom:1px solid var(--border-soft);}
+  .lm-day-time{
+    font-family:var(--font-mono);
+    font-size:14px;
+    color:var(--mint);
+  }
+  .lm-day-text{
+    font-size:16px;
+    line-height:1.6;
+    color:var(--text);
+    max-width:560px;
+  }
+  .lm-day{position:relative;}
+  .lm-day::before{
+    content:'';
+    position:absolute;
+    left:132px;
+    top:0; bottom:0;
+    width:1px;
+    background:var(--border-soft);
+  }
+  .lm-day-pulse{
+    position:absolute;
+    left:128px;
+    width:9px;height:9px;
+    border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 10px var(--mint);
+    animation:traveldot 9s ease-in-out infinite;
+  }
+  @keyframes traveldot{
+    0%{top:8%;opacity:0;}
+    8%{opacity:1;}
+    46%{top:48%;opacity:1;}
+    54%{opacity:1;}
+    92%{top:90%;opacity:1;}
+    100%{top:90%;opacity:0;}
+  }
+  @media (max-width:640px){
+    .lm-day::before, .lm-day-pulse{display:none;}
+  }
+  @media (max-width:640px){
+    .lm-day-row{grid-template-columns:1fr;gap:8px;}
+  }
+
+  .lm-future{
+    margin-top:36px;
+    padding-top:30px;
+    border-top:1px solid var(--border-soft);
+  }
+  .lm-future-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:18px;
+  }
+  .lm-future-row{
+    display:grid;
+    grid-template-columns:80px 1fr 50px;
+    gap:16px;
+    align-items:baseline;
+    padding:13px 0;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .lm-future-row:last-of-type{border-bottom:none;}
+  .lm-future-when{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--mint);
+  }
+  .lm-future-text{
+    font-size:15px;
+    color:var(--text);
+  }
+  .lm-future-conf{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    text-align:right;
+  }
+  .lm-future-note{
+    margin:18px 0 0;
+    font-size:13px;
+    color:var(--text-faint);
+    max-width:480px;
+  }
+  @media (max-width:640px){
+    .lm-future-row{grid-template-columns:58px 1fr 38px;gap:10px;}
+    .lm-future-text{font-size:14px;}
+  }
+
+  /* ---------- specs / privacy ---------- */
+  .lm-privacy-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:60px;
+    align-items:start;
+  }
+  .lm-privacy-text p{
+    font-size:16px;
+    line-height:1.7;
+    color:var(--text-muted);
+    margin:0 0 16px;
+  }
+  .lm-terminal{
+    display:block;
+    margin-top:22px;
+    background:rgba(0,0,0,0.4);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    line-height:1.75;
+    color:var(--mint);
+    min-height:104px;
+    white-space:pre-wrap;
+  }
+  .lm-terminal-cursor{
+    display:inline-block;
+    width:6px;height:12px;
+    background:var(--mint);
+    margin-left:2px;
+    vertical-align:-2px;
+    animation:caret 0.9s steps(1) infinite;
+  }
+  .lm-spec-table{
+    background:rgba(20,25,37,0.4);
+    backdrop-filter:blur(18px) saturate(150%);
+    -webkit-backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px;
+    padding:8px 26px;
+  }
+  .lm-spec-row{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    padding:16px 0;
+    border-bottom:1px solid var(--border-soft);
+    font-size:14px;
+  }
+  .lm-spec-row:last-child{border-bottom:none;}
+  .lm-spec-key{
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    font-size:11.5px;
+    padding-top:2px;
+  }
+  .lm-spec-val{
+    text-align:right;
+    color:var(--text);
+    max-width:280px;
+  }
+  @media (max-width:860px){
+    .lm-privacy-grid{grid-template-columns:1fr;gap:36px;}
+  }
+
+  /* ---------- pricing ---------- */
+  .lm-pricing-card-wrap{
+    position:relative;
+  }
+  .lm-pricing-glow{
+    position:absolute;
+    inset:-3px;
+    border-radius:26px;
+    background:conic-gradient(from 0deg, var(--blue), var(--pink) 33%, var(--mint) 66%, var(--blue) 100%);
+    filter:blur(20px);
+    opacity:0.35;
+    animation:spin 14s linear infinite;
+  }
+  .lm-pricing-card{
+    background:rgba(20,25,37,0.42);
+    backdrop-filter:blur(20px) saturate(150%);
+    -webkit-backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:24px;
+    padding:56px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:48px;
+    align-items:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .lm-pricing-card::before{
+    content:'';
+    position:absolute;
+    top:-120px; right:-120px;
+    width:320px;height:320px;
+    border-radius:50%;
+    background:var(--gradient);
+    opacity:0.12;
+    filter:blur(40px);
+  }
+  .lm-price-row{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:8px;
+  }
+  .lm-price{
+    font-family:var(--font-display);
+    font-size:52px;
+    font-weight:500;
+  }
+  .lm-price-old{
+    font-family:var(--font-mono);
+    font-size:18px;
+    color:var(--text-faint);
+    text-decoration:line-through;
+  }
+  .lm-price-note{
+    color:var(--text-muted);
+    font-size:14.5px;
+    margin:0 0 28px;
+    max-width:380px;
+  }
+  .lm-countdown{
+    display:flex;
+    gap:18px;
+    margin-bottom:6px;
+  }
+  .lm-count-unit{text-align:center;}
+  .lm-count-num{
+    font-family:var(--font-mono);
+    font-size:26px;
+    color:var(--mint);
+  }
+  .lm-count-label{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--text-faint);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+  }
+  .lm-countdown-caption{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--text-faint);
+    margin-bottom:30px;
+  }
+  .lm-pricing-cta{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    align-items:flex-end;
+  }
+  .lm-social-proof{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+  }
+  @media (max-width:760px){
+    .lm-pricing-card{grid-template-columns:1fr;padding:36px;}
+    .lm-pricing-cta{align-items:flex-start;}
+  }
+
+  /* ---------- faq ---------- */
+  details.lm-faq{
+    border-top:1px solid var(--border-soft);
+    padding:22px 0;
+  }
+  details.lm-faq:last-child{border-bottom:1px solid var(--border-soft);}
+  details.lm-faq summary{
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:16px;
+    font-weight:500;
+  }
+  details.lm-faq summary::-webkit-details-marker{display:none;}
+  details.lm-faq summary::after{
+    content:'+';
+    font-family:var(--font-mono);
+    font-size:20px;
+    color:var(--text-faint);
+    transition:transform .2s;
+  }
+  details.lm-faq[open] summary::after{
+    transform:rotate(45deg);
+    color:var(--mint);
+  }
+  details.lm-faq p{
+    margin:14px 0 0;
+    color:var(--text-muted);
+    font-size:14.5px;
+    line-height:1.6;
+    max-width:620px;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--border-soft);
+    padding:64px 0 36px;
+  }
+  .lm-footer-top{
+    display:flex;
+    justify-content:space-between;
+    gap:40px;
+    flex-wrap:wrap;
+    margin-bottom:56px;
+  }
+  .lm-footer-tag{
+    color:var(--text-muted);
+    font-size:14px;
+    margin-top:10px;
+    max-width:240px;
+  }
+  .lm-newsletter{
+    display:flex;
+    gap:10px;
+  }
+  .lm-newsletter input{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:11px 16px;
+    font-family:var(--font-body);
+    font-size:16px;
+    color:var(--text);
+    width:220px;
+  }
+  .lm-newsletter input::placeholder{color:var(--text-faint);}
+  .lm-newsletter button{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13px;
+    padding:11px 18px;
+    border-radius:999px;
+    background:var(--text);
+    color:#0B0E14;
+    border:none;
+    cursor:pointer;
+  }
+  .lm-footer-impact{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    padding:18px 0;
+    border-top:1px solid var(--border-soft);
+    border-bottom:1px solid var(--border-soft);
+    margin-bottom:40px;
+  }
+  .lm-impact-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 6px var(--mint);
+    flex-shrink:0;
+  }
+  .lm-impact-num{
+    color:var(--text);
+    transition:opacity .25s ease;
+  }
+  .lm-impact-sep{opacity:0.5;}
+  .lm-footer-cols{
+    display:flex;
+    gap:64px;
+    flex-wrap:wrap;
+  }
+  .lm-footer-col h4{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin:0 0 16px;
+  }
+  .lm-footer-col a{
+    display:block;
+    font-size:14px;
+    color:var(--text-muted);
+    margin-bottom:10px;
+    transition:color .2s;
+  }
+  .lm-footer-col a:hover{color:var(--text);}
+  .lm-footer-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:28px;
+    border-top:1px solid var(--border-soft);
+    font-size:12.5px;
+    color:var(--text-faint);
+    flex-wrap:wrap;
+    gap:12px;
+  }
+
+  /* ---------- global fixed backdrop (for glass surfaces to refract) ---------- */
+  .lm-global-wash{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 15%, rgba(124,158,255,0.12), transparent 38%),
+      radial-gradient(circle at 88% 24%, rgba(255,143,206,0.09), transparent 36%),
+      radial-gradient(circle at 30% 92%, rgba(124,255,214,0.08), transparent 34%),
+      radial-gradient(circle at 80% 88%, rgba(124,158,255,0.07), transparent 32%);
+  }
+  .lm-global-grid{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size:46px 46px;
+    -webkit-mask-image:radial-gradient(circle at 50% 0%, black 0%, transparent 70%);
+    mask-image:radial-gradient(circle at 50% 0%, black 0%, transparent 70%);
+  }
+
+  /* ---------- glass surface utility ---------- */
+  .lm-glass{
+    background:rgba(20,25,37,0.4);
+    backdrop-filter:blur(18px) saturate(150%);
+    -webkit-backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(255,255,255,0.1);
+  }
+
+  /* ---------- HUD corner brackets ---------- */
+  .lm-corners{position:relative;}
+  .lm-corner{
+    position:absolute;
+    width:13px;height:13px;
+    border:1.5px solid rgba(124,255,214,0.65);
+    pointer-events:none;
+  }
+  .lm-corner.tl{top:-1px;left:-1px;border-right:none;border-bottom:none;}
+  .lm-corner.tr{top:-1px;right:-1px;border-left:none;border-bottom:none;}
+  .lm-corner.bl{bottom:-1px;left:-1px;border-right:none;border-top:none;}
+  .lm-corner.br{bottom:-1px;right:-1px;border-left:none;border-top:none;}
+
+  /* ---------- live status chip ---------- */
+  .lm-live-chip{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    color:var(--text-faint);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:5px 10px 5px 8px;
+  }
+  .lm-live-chip .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 7px var(--mint);
+    animation:think 1.8s ease-in-out infinite;
+  }
+  @media (max-width:980px){.lm-live-chip{display:none;}}
+
+  /* ---------- autonomous status bar ---------- */
+  .lm-status-bar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    z-index:55;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:9px 20px;
+    padding-bottom:calc(9px + var(--safe-bottom));
+    background:rgba(8,10,16,0.55);
+    backdrop-filter:blur(16px) saturate(150%);
+    -webkit-backdrop-filter:blur(16px) saturate(150%);
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .lm-status-live{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    color:var(--mint);
+  }
+  .lm-status-live .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 7px var(--mint);
+    animation:think 1.6s ease-in-out infinite;
+  }
+  .lm-status-sep{
+    width:1px;height:14px;
+    background:var(--border);
+    flex-shrink:0;
+  }
+  .lm-status-track{
+    flex:1;
+    overflow:hidden;
+    position:relative;
+    height:16px;
+  }
+  .lm-status-scroll{
+    display:flex;
+    position:absolute;
+    white-space:nowrap;
+    animation:marquee 26s linear infinite;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .lm-status-scroll span{padding-right:48px;}
+  @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  @media (max-width:640px){
+    .lm-status-bar{gap:10px;padding:0 14px;}
+    .lm-status-live span.lm-status-text{display:none;}
+  }
+
+
+  /* ---------- time-of-day adaptive theme ---------- */
+  body.lm-mode-night .lm-global-wash{
+    filter:hue-rotate(-10deg) saturate(0.85) brightness(0.9);
+  }
+  body.lm-mode-night .lm-orb-core{
+    filter:saturate(0.82) brightness(0.92);
+  }
+  body.lm-mode-night .lm-live-chip{
+    border-color:rgba(255,143,206,0.35);
+  }
+
+  /* ---------- autonomous toast ---------- */
+  .lm-toast{
+    position:fixed;
+    right:22px;
+    bottom:calc(56px + var(--safe-bottom));
+    z-index:54;
+    width:280px;
+    background:rgba(20,25,37,0.55);
+    backdrop-filter:blur(18px) saturate(150%);
+    -webkit-backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:14px;
+    padding:14px 16px;
+    display:flex;
+    gap:10px;
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity .4s ease, transform .4s ease;
+    pointer-events:none;
+  }
+  .lm-toast.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .lm-toast-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--mint);
+    box-shadow:0 0 8px var(--mint);
+    margin-top:5px;
+    flex-shrink:0;
+  }
+  .lm-toast-text{
+    font-size:13px;
+    line-height:1.5;
+    color:var(--text);
+  }
+  .lm-toast-text strong{font-weight:600;}
+  .lm-toast-sub{
+    display:block;
+    margin-top:3px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--text-faint);
+  }
+  @media (max-width:640px){
+    .lm-toast{left:16px;right:16px;width:auto;bottom:calc(50px + var(--safe-bottom));}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,
+    .lm-blob,
+    .lm-orb-ring-spin,
+    .lm-orb-core,
+    .lm-orb-core.lm-pulse,
+    .lm-pricing-glow,
+    .lm-status-scroll,
+    .lm-viz-voice span,
+    .lm-viz-light .lm-ring-pulse,
+    .lm-viz-presence .lm-sweep,
+    .lm-viz-routine path,
+    .lm-live-chip .dot,
+    .lm-thinking span,
+    .lm-nav-scan,
+    .lm-day-pulse,
+    .lm-terminal-cursor,
+    .lm-toast,
+    .lm-agent-core,
+    .lm-agent-node,
+    .lm-reason-step{
+      animation:none !important;
+      transition:none !important;
+    }
+    .lm-packet{
+      display:none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="lm-global-wash"></div>
+<div class="lm-global-grid"></div>
+
+<svg class="lm-noise" width="100%" height="100%">
+  <filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+  <rect width="100%" height="100%" filter="url(#n)"/>
+</svg>
+
+<nav class="lm-nav">
+  <div class="lm-nav-scan"></div>
+  <div class="lm-nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="#" class="lm-logo"><span class="lm-logo-mark"></span>Lumen</a>
+      <div class="lm-live-chip"><span class="dot"></span><span id="lm-live-chip-text">SYSTEM ONLINE</span></div>
+    </div>
+    <input type="checkbox" id="lm-nav-toggle" class="lm-nav-toggle-input">
+    <div class="lm-nav-links">
+      <a href="#senses">Senses</a>
+      <a href="#day">A day with Lumen</a>
+      <a href="#specs">Specs</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;">
+      <a href="#pricing" class="lm-nav-cta">Reserve — $249</a>
+      <label for="lm-nav-toggle" class="lm-nav-toggle-label">≡</label>
+    </div>
+  </div>
+</nav>
+
+<header class="lm-hero">
+  <div class="lm-ambient">
+    <div class="lm-blob b1"></div>
+    <div class="lm-blob b2"></div>
+    <div class="lm-blob b3"></div>
+  </div>
+  <canvas id="lm-network" class="lm-network-canvas"></canvas>
+  <div class="lm-wrap">
+    <div class="lm-hero-grid">
+      <div>
+        <div class="lm-eyebrow">Founder edition — ships March 2027</div>
+        <h1 class="lm-h1">Intelligence that <em>listens</em> before it speaks.</h1>
+        <p class="lm-sub">Lumen is a quiet presence for your home. It learns the shape of your days, and says exactly enough — never more.</p>
+        <div class="lm-cta-row">
+          <button class="lm-btn-primary" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Reserve yours — $249</button>
+          <button class="lm-btn-ghost" id="lm-demo-btn">Hear it think</button>
+        </div>
+        <div class="lm-micro">$20 deposit · fully refundable · ships March 2027</div>
+      </div>
+      <div class="lm-orb-wrap">
+        <div class="lm-orb-stage" id="lm-orb-stage">
+          <div class="lm-orb-ring"></div>
+          <div class="lm-orb-ring r2"></div>
+          <div class="lm-orb-ring-spin"></div>
+          <div class="lm-orb-glass"></div>
+          <div class="lm-orb-core" id="lm-orb-core"></div>
+          <div class="lm-orb-tag t1">listening · soft music</div>
+          <div class="lm-orb-tag t2">2 people home</div>
+          <div class="lm-orb-tag t3" id="lm-orb-clock">low light · 9:48 PM</div>
+          <div class="lm-demo-bubble" id="lm-demo-bubble">
+            <div class="lm-thinking" id="lm-thinking"><span></span><span></span><span></span></div>
+            <span class="lm-demo-text" id="lm-demo-text"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<hr class="lm-divider">
+
+<section id="activity">
+  <div class="lm-wrap">
+    <div class="lm-section-head lm-reveal">
+      <div class="lm-eyebrow">Autonomous activity — live</div>
+      <h2 class="lm-h2">It's already working.</h2>
+      <p class="lm-section-sub">Nothing on this panel needs you to press anything. It's what Lumen is noticing and doing, right now, on its own.</p>
+    </div>
+    <div class="lm-activity-panel lm-reveal lm-corners lm-glass">
+      <span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+      <div class="lm-activity-top">
+        <div class="lm-activity-next">
+          <div class="lm-activity-label">Next autonomous action</div>
+          <div class="lm-activity-predict" id="lm-next-action">dim the office light</div>
+        </div>
+        <div class="lm-activity-countdown">
+          <div class="lm-count-num" id="lm-next-countdown">00:47</div>
+          <div class="lm-count-label">In</div>
+        </div>
+        <div class="lm-activity-stat">
+          <div class="lm-count-num" id="lm-decisions-count">1,482</div>
+          <div class="lm-count-label">Decisions today</div>
+        </div>
+      </div>
+      <div class="lm-feed" id="lm-feed"></div>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="agents">
+  <div class="lm-wrap">
+    <div class="lm-section-head lm-reveal">
+      <div class="lm-eyebrow">Autonomous agents — coordinating</div>
+      <h2 class="lm-h2">Four agents, one decision.</h2>
+      <p class="lm-section-sub">Lumen isn't one brain making every call. It's a few specialists that confer constantly, and only one of them ever talks to you.</p>
+    </div>
+
+    <div class="lm-agents-stats lm-reveal">
+      <span><span class="lm-impact-num" id="lm-stat-agents-online">4</span> agents online</span>
+      <span class="lm-impact-sep">·</span>
+      <span><span class="lm-impact-num" id="lm-stat-predictions">2,481</span> predictions today</span>
+      <span class="lm-impact-sep">·</span>
+      <span><span class="lm-impact-num" id="lm-stat-confidence">97.2%</span> average confidence</span>
+    </div>
+
+    <div class="lm-agents-grid">
+      <div class="lm-network-panel lm-reveal lm-corners lm-glass">
+        <span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <svg class="lm-network-svg" viewBox="0 0 560 320" preserveAspectRatio="xMidYMid meet">
+          <line x1="280" y1="160" x2="110" y2="68" class="lm-agent-line"></line>
+          <line x1="280" y1="160" x2="450" y2="68" class="lm-agent-line"></line>
+          <line x1="280" y1="160" x2="110" y2="252" class="lm-agent-line"></line>
+          <line x1="280" y1="160" x2="450" y2="252" class="lm-agent-line"></line>
+
+          <circle r="4" class="lm-packet c-blue">
+            <animateMotion dur="2.6s" repeatCount="indefinite" path="M280,160 L110,68"></animateMotion>
+          </circle>
+          <circle r="4" class="lm-packet c-pink">
+            <animateMotion dur="3.1s" repeatCount="indefinite" path="M280,160 L450,68"></animateMotion>
+          </circle>
+          <circle r="4" class="lm-packet c-mint">
+            <animateMotion dur="2.8s" repeatCount="indefinite" path="M280,160 L110,252"></animateMotion>
+          </circle>
+          <circle r="4" class="lm-packet c-blue">
+            <animateMotion dur="3.4s" repeatCount="indefinite" path="M280,160 L450,252"></animateMotion>
+          </circle>
+
+          <circle cx="280" cy="160" r="24" class="lm-agent-core"></circle>
+          <text x="280" y="165" class="lm-agent-core-label">CORE</text>
+
+          <circle cx="110" cy="68" r="15" class="lm-agent-node n-blue"></circle>
+          <circle cx="450" cy="68" r="15" class="lm-agent-node n-pink"></circle>
+          <circle cx="110" cy="252" r="15" class="lm-agent-node n-mint"></circle>
+          <circle cx="450" cy="252" r="15" class="lm-agent-node n-blue"></circle>
+
+          <text x="110" y="38" class="lm-agent-label">Planning</text>
+          <text x="110" y="53" class="lm-agent-status" id="lm-agent-status-planning">active</text>
+
+          <text x="450" y="38" class="lm-agent-label">Memory</text>
+          <text x="450" y="53" class="lm-agent-status" id="lm-agent-status-memory">active</text>
+
+          <text x="110" y="282" class="lm-agent-label">Energy</text>
+          <text x="110" y="297" class="lm-agent-status" id="lm-agent-status-energy">active</text>
+
+          <text x="450" y="282" class="lm-agent-label">Comfort</text>
+          <text x="450" y="297" class="lm-agent-status" id="lm-agent-status-comfort">active</text>
+        </svg>
+      </div>
+
+      <div class="lm-reason-panel lm-reveal lm-corners lm-glass">
+        <span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-reason-label"><span class="lm-impact-dot"></span>AI reasoning, live</div>
+        <div class="lm-reason-steps" id="lm-reason-steps"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="senses">
+  <div class="lm-wrap">
+    <div class="lm-section-head lm-reveal">
+      <div class="lm-eyebrow">How Lumen pays attention</div>
+      <h2 class="lm-h2">Four senses, one quiet mind.</h2>
+      <p class="lm-section-sub">No always-on camera, no wake-word theater. Just a handful of senses, tuned to notice what actually matters.</p>
+    </div>
+    <div class="lm-senses-grid">
+      <div class="lm-sense-card lm-reveal lm-corners"><span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-viz lm-viz-voice"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="lm-sense-label">Voice</div>
+        <h3 class="lm-sense-title">Hears tone, not just words</h3>
+        <p class="lm-sense-text">A tired "turn off the lights" gets a softer reply than a rushed one. Lumen reads how you say things, not only what you say.</p>
+        <div class="lm-sense-live"><span class="lm-live-num" id="lm-stat-voice">34 dB</span><span class="lm-live-tag">average level</span></div>
+      </div>
+      <div class="lm-sense-card lm-reveal lm-corners"><span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-viz lm-viz-light">
+          <div class="lm-ring-pulse"></div>
+          <div class="lm-ring-pulse r2"></div>
+          <div class="lm-ring-pulse r3"></div>
+          <div class="lm-ring-dot"></div>
+        </div>
+        <div class="lm-sense-label">Light</div>
+        <h3 class="lm-sense-title">Matches the room's mood</h3>
+        <p class="lm-sense-text">Lumen reads the ambient and color light around it, then glows to match — so it feels like part of the room, not a screen in it.</p>
+        <div class="lm-sense-live"><span class="lm-live-num" id="lm-stat-light">280 lux</span><span class="lm-live-tag">ambient reading</span></div>
+      </div>
+      <div class="lm-sense-card lm-reveal lm-corners"><span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-viz lm-viz-presence">
+          <div class="lm-sweep"></div>
+          <div class="lm-blip b1"></div>
+          <div class="lm-blip b2"></div>
+        </div>
+        <div class="lm-sense-label">Presence</div>
+        <h3 class="lm-sense-title">Knows who's home</h3>
+        <p class="lm-sense-text">A short-range radar sensor tells Lumen who's in the room and who isn't — no camera, no footage, ever.</p>
+        <div class="lm-sense-live"><span class="lm-live-num" id="lm-stat-presence">2 home</span><span class="lm-live-tag">right now</span></div>
+      </div>
+      <div class="lm-sense-card lm-reveal lm-corners"><span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-viz lm-viz-routine">
+          <svg viewBox="0 0 120 54" preserveAspectRatio="none">
+            <path d="M0,40 C15,40 15,15 30,15 C45,15 45,34 60,34 C75,34 75,10 90,10 C105,10 105,28 120,28"/>
+          </svg>
+        </div>
+        <div class="lm-sense-label">Routine</div>
+        <h3 class="lm-sense-title">Notices what's different</h3>
+        <p class="lm-sense-text">Lumen learns the rhythm of your week, and only speaks up when something actually breaks the pattern.</p>
+        <div class="lm-sense-live"><span class="lm-live-num" id="lm-stat-routine">92% confidence</span><span class="lm-live-tag">model fit</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="day">
+  <div class="lm-wrap">
+    <div class="lm-section-head lm-reveal">
+      <div class="lm-eyebrow">A day with Lumen</div>
+      <h2 class="lm-h2">It works in the background, on purpose.</h2>
+      <p class="lm-section-sub">Most of what Lumen does, you'll never see directly. That's the idea.</p>
+    </div>
+    <div class="lm-day">
+      <div class="lm-day-pulse"></div>
+      <div class="lm-day-row lm-reveal">
+        <div class="lm-day-time">6:40 AM</div>
+        <div class="lm-day-text">Lumen senses the bedroom warming and starts the kettle before the alarm even goes off.</div>
+      </div>
+      <div class="lm-day-row lm-reveal">
+        <div class="lm-day-time">1:15 PM</div>
+        <div class="lm-day-text">A video call starts in the office. Lumen mutes the hallway speaker, no one has to ask.</div>
+      </div>
+      <div class="lm-day-row lm-reveal">
+        <div class="lm-day-time">9:50 PM</div>
+        <div class="lm-day-text">The house goes quiet. Lumen dims to a single amber point on the shelf, and waits.</div>
+      </div>
+    </div>
+    <div class="lm-future lm-reveal">
+      <div class="lm-future-label">Likely next, from where things stand right now</div>
+      <div class="lm-future-row">
+        <div class="lm-future-when" id="lm-future-when-1">+15 min</div>
+        <div class="lm-future-text">Probably dims the office light a little</div>
+        <div class="lm-future-conf">78%</div>
+      </div>
+      <div class="lm-future-row">
+        <div class="lm-future-when" id="lm-future-when-2">+1 hr</div>
+        <div class="lm-future-text">Probably eases into evening lighting</div>
+        <div class="lm-future-conf">85%</div>
+      </div>
+      <div class="lm-future-row">
+        <div class="lm-future-when" id="lm-future-when-3">+3 hrs</div>
+        <div class="lm-future-text">Probably settles into sleep mode</div>
+        <div class="lm-future-conf">91%</div>
+      </div>
+      <p class="lm-future-note">These are forecasts, not promises — Lumen would rather be quiet and wrong than confident and wrong.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="specs">
+  <div class="lm-wrap">
+    <div class="lm-privacy-grid">
+      <div class="lm-privacy-text lm-reveal">
+        <div class="lm-eyebrow">On-device, by design</div>
+        <h2 class="lm-h2">Everything it hears stays in the room.</h2>
+        <p>Lumen's reasoning happens on a dedicated chip inside the base, not in a data center. Nothing leaves the house unless you specifically ask it to.</p>
+        <p>That's not a feature we bolted on for the launch page — it's the reason Lumen has a chip of its own, instead of just a microphone and a Wi-Fi antenna.</p>
+        <div class="lm-terminal" id="lm-terminal"><span id="lm-terminal-output"></span></div>
+      </div>
+      <div class="lm-spec-table lm-reveal lm-corners">
+        <span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+        <div class="lm-spec-row"><div class="lm-spec-key">Processor</div><div class="lm-spec-val">Dedicated on-device neural chip</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Microphone array</div><div class="lm-spec-val">4-channel, far-field</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Presence sensing</div><div class="lm-spec-val">mmWave radar, no camera</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Light sensor</div><div class="lm-spec-val">Ambient + color temperature</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Battery</div><div class="lm-spec-val">14 days typical, wireless base</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Connectivity</div><div class="lm-spec-val">Wi-Fi 6 · Thread · Bluetooth 5.3</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Materials</div><div class="lm-spec-val">Cast aluminum base, blown glass shell</div></div>
+        <div class="lm-spec-row"><div class="lm-spec-key">Dimensions</div><div class="lm-spec-val">94 × 94 × 130 mm</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="pricing">
+  <div class="lm-wrap">
+    <div class="lm-pricing-card-wrap lm-reveal">
+      <div class="lm-pricing-glow"></div>
+      <div class="lm-pricing-card lm-corners">
+        <span class="lm-corner tl"></span><span class="lm-corner tr"></span><span class="lm-corner bl"></span><span class="lm-corner br"></span>
+      <div>
+        <div class="lm-eyebrow">Founder pricing</div>
+        <div class="lm-price-row">
+          <span class="lm-price">$249</span>
+          <span class="lm-price-old">$329</span>
+        </div>
+        <p class="lm-price-note">$20 deposit today, fully refundable any time before your unit ships. The rest is billed when Lumen leaves the warehouse.</p>
+        <div class="lm-countdown" id="lm-countdown">
+          <div class="lm-count-unit"><div class="lm-count-num" id="cd-d">00</div><div class="lm-count-label">Days</div></div>
+          <div class="lm-count-unit"><div class="lm-count-num" id="cd-h">00</div><div class="lm-count-label">Hrs</div></div>
+          <div class="lm-count-unit"><div class="lm-count-num" id="cd-m">00</div><div class="lm-count-label">Min</div></div>
+          <div class="lm-count-unit"><div class="lm-count-num" id="cd-s">00</div><div class="lm-count-label">Sec</div></div>
+        </div>
+        <div class="lm-countdown-caption">Until founder pricing ends</div>
+      </div>
+      <div class="lm-pricing-cta">
+        <button class="lm-btn-primary">Reserve — $20 deposit</button>
+        <div class="lm-social-proof">1,212 reserved this month</div>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<hr class="lm-divider">
+
+<section id="faq">
+  <div class="lm-wrap">
+    <div class="lm-section-head lm-reveal">
+      <div class="lm-eyebrow">Questions</div>
+      <h2 class="lm-h2">Before you reserve.</h2>
+    </div>
+    <div>
+      <details class="lm-faq lm-reveal" open>
+        <summary>Does Lumen need a camera to know who's home?</summary>
+        <p>No. Presence sensing runs on mmWave radar, the same kind of tech used in some health monitors — it detects people, not images.</p>
+      </details>
+      <details class="lm-faq lm-reveal">
+        <summary>What happens to my deposit if I change my mind?</summary>
+        <p>It's refunded in full, any time before your unit ships. No form, just a reply to your confirmation email.</p>
+      </details>
+      <details class="lm-faq lm-reveal">
+        <summary>Can it control the smart home gear I already own?</summary>
+        <p>Yes. Lumen speaks Thread and Wi-Fi 6 natively, and bridges most major smart home ecosystems at launch.</p>
+      </details>
+      <details class="lm-faq lm-reveal">
+        <summary>Does it record conversations?</summary>
+        <p>Lumen listens locally and discards audio right after processing it, unless you explicitly ask it to save a note.</p>
+      </details>
+      <details class="lm-faq lm-reveal">
+        <summary>When do founder units actually ship?</summary>
+        <p>March 2027, in the order reservations were placed. We'll email you a tracking window about four weeks out.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="lm-wrap">
+    <div class="lm-footer-top">
+      <div>
+        <a href="#" class="lm-logo"><span class="lm-logo-mark"></span>Lumen</a>
+        <p class="lm-footer-tag">A quieter kind of intelligence.</p>
+      </div>
+      <div>
+        <div class="lm-newsletter">
+          <input type="email" placeholder="you@email.com" aria-label="Email address">
+          <button>Notify me</button>
+        </div>
+      </div>
+    </div>
+    <div class="lm-footer-impact">
+      <span class="lm-impact-dot"></span>
+      <span><span class="lm-impact-num" id="lm-footer-energy">14.2</span> kWh saved this month</span>
+      <span class="lm-impact-sep">·</span>
+      <span><span class="lm-impact-num" id="lm-footer-decisions">1,482</span> decisions today</span>
+      <span class="lm-impact-sep">·</span>
+      <span><span class="lm-impact-num">0</span> bytes sent to the cloud</span>
+    </div>
+    <div class="lm-footer-cols">
+      <div class="lm-footer-col">
+        <h4>Product</h4>
+        <a href="#senses">Senses</a>
+        <a href="#specs">Specs</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="lm-footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="lm-footer-col">
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Warranty</a>
+      </div>
+    </div>
+    <div class="lm-footer-bottom">
+      <span>© 2026 Lumen Labs. All rights reserved.</span>
+      <span>Made for quieter homes.</span>
+    </div>
+  </div>
+</footer>
+
+<div class="lm-toast" id="lm-toast">
+  <div class="lm-toast-dot"></div>
+  <div class="lm-toast-text" id="lm-toast-text"><strong>Lumen</strong> just dimmed the kitchen light.<span class="lm-toast-sub">You didn't have to ask.</span></div>
+</div>
+
+<div class="lm-status-bar">
+  <div class="lm-status-live"><span class="dot"></span><span class="lm-status-text">LIVE</span></div>
+  <div class="lm-status-sep"></div>
+  <div class="lm-status-track">
+    <div class="lm-status-scroll">
+      <span>DIMMED LIVING ROOM · 9:42 PM &nbsp;&nbsp;·&nbsp;&nbsp; MUTED HALLWAY SPEAKER · 1:15 PM &nbsp;&nbsp;·&nbsp;&nbsp; STARTED KETTLE · 6:41 AM &nbsp;&nbsp;·&nbsp;&nbsp; PRESENCE: 2 DETECTED &nbsp;&nbsp;·&nbsp;&nbsp; ROUTINE MODEL SYNCED &nbsp;&nbsp;·&nbsp;&nbsp; AMBIENT LIGHT: LOW &nbsp;&nbsp;·&nbsp;&nbsp; NOTHING SENT TO THE CLOUD</span>
+      <span>DIMMED LIVING ROOM · 9:42 PM &nbsp;&nbsp;·&nbsp;&nbsp; MUTED HALLWAY SPEAKER · 1:15 PM &nbsp;&nbsp;·&nbsp;&nbsp; STARTED KETTLE · 6:41 AM &nbsp;&nbsp;·&nbsp;&nbsp; PRESENCE: 2 DETECTED &nbsp;&nbsp;·&nbsp;&nbsp; ROUTINE MODEL SYNCED &nbsp;&nbsp;·&nbsp;&nbsp; AMBIENT LIGHT: LOW &nbsp;&nbsp;·&nbsp;&nbsp; NOTHING SENT TO THE CLOUD</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Countdown timer
+  var target = new Date('2026-07-02T00:00:00').getTime();
+  function updateCountdown(){
+    var now = new Date().getTime();
+    var diff = Math.max(0, target - now);
+    var d = Math.floor(diff/(1000*60*60*24));
+    var h = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+    var m = Math.floor((diff%(1000*60*60))/(1000*60));
+    var s = Math.floor((diff%(1000*60))/1000);
+    document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Orb tag ticks with the real time, reinforcing the "always-on" feel
+  var clockTag = document.getElementById('lm-orb-clock');
+  function updateClock(){
+    if(!clockTag) return;
+    var now = new Date();
+    var h = now.getHours();
+    var m = now.getMinutes();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if(h12 === 0) h12 = 12;
+    var mm = String(m).padStart(2,'0');
+    var label = (h >= 19 || h < 7) ? 'low light' : 'bright light';
+    clockTag.textContent = label + ' · ' + h12 + ':' + mm + ' ' + ampm;
+  }
+  updateClock();
+  setInterval(updateClock, 15000);
+
+  // 'Likely next' times — computed once from the real clock, not continuously ticking
+  (function(){
+    function formatOffset(mins){
+      var d = new Date(Date.now() + mins*60000);
+      var h = d.getHours();
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      var h12 = h % 12; if(h12 === 0) h12 = 12;
+      var mm = String(d.getMinutes()).padStart(2,'0');
+      return h12 + ':' + mm + ' ' + ampm;
+    }
+    var offsets = [
+      {id:'lm-future-when-1', mins:15, label:'+15 min'},
+      {id:'lm-future-when-2', mins:60, label:'+1 hr'},
+      {id:'lm-future-when-3', mins:180, label:'+3 hrs'}
+    ];
+    offsets.forEach(function(o){
+      var el = document.getElementById(o.id);
+      if(el) el.textContent = o.label + ' · ' + formatOffset(o.mins);
+    });
+  })();
+
+  // Orb sensing tag cycles on its own — no click required
+  var t1 = document.querySelector('.lm-orb-tag.t1');
+  var t1Phrases = [
+    'listening · soft music',
+    'sensing · steady routine',
+    'listening · quiet rain outside',
+    'watching · porch motion',
+    'sensing · warm afternoon light',
+    'listening · kettle simmering'
+  ];
+  var t1Index = 0;
+  if(t1){
+    setInterval(function(){
+      t1.style.opacity = 0;
+      setTimeout(function(){
+        t1Index = (t1Index + 1) % t1Phrases.length;
+        t1.textContent = t1Phrases[t1Index];
+        t1.style.opacity = 1;
+      }, 350);
+    }, 6000);
+  }
+
+  // Decisions-today counter, ticking up on its own
+  var decisionsEl = document.getElementById('lm-decisions-count');
+  var decisionsCount = 1482;
+  function renderDecisions(){
+    if(decisionsEl) decisionsEl.textContent = decisionsCount.toLocaleString('en-US');
+    var footerDecisionsEl = document.getElementById('lm-footer-decisions');
+    if(footerDecisionsEl) footerDecisionsEl.textContent = decisionsCount.toLocaleString('en-US');
+  }
+  renderDecisions();
+  function scheduleDecisionTick(){
+    setTimeout(function(){
+      decisionsCount += 1;
+      renderDecisions();
+      scheduleDecisionTick();
+    }, 6000 + Math.random()*9000);
+  }
+  scheduleDecisionTick();
+
+  // Predictive "next autonomous action" widget, with a live countdown
+  var nextActionEl = document.getElementById('lm-next-action');
+  var nextCountdownEl = document.getElementById('lm-next-countdown');
+  var predictions = [
+    'dim the office light',
+    'lower the music volume',
+    'switch the porch light off',
+    'start the evening playlist',
+    'mute the hallway speaker',
+    'warm up the reading lamp'
+  ];
+  var nextSeconds = 0;
+
+  function pickPrediction(){
+    var p = predictions[Math.floor(Math.random()*predictions.length)];
+    if(nextActionEl){
+      nextActionEl.style.opacity = 0;
+      setTimeout(function(){
+        nextActionEl.textContent = p;
+        nextActionEl.style.opacity = 1;
+      }, 250);
+    }
+    nextSeconds = 25 + Math.floor(Math.random()*55);
+    return p;
+  }
+  var lastPrediction = pickPrediction();
+
+  function renderCountdown(){
+    if(!nextCountdownEl) return;
+    var m = Math.floor(nextSeconds/60);
+    var s = nextSeconds%60;
+    nextCountdownEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+  renderCountdown();
+
+  setInterval(function(){
+    nextSeconds--;
+    if(nextSeconds <= 0){
+      pushFeedEntry({type:'action', text:'Just did: ' + lastPrediction[0].toUpperCase() + lastPrediction.slice(1)});
+      lastPrediction = pickPrediction();
+    }
+    renderCountdown();
+  }, 1000);
+
+  // Live decision feed — Lumen narrating its own activity in real time
+  var feedEl = document.getElementById('lm-feed');
+  var feedActions = [
+    {type:'action', text:'Dimmed the hallway light to 40%'},
+    {type:'sense', text:'Noticed the room got quieter'},
+    {type:'action', text:'Lowered the speaker volume in the office'},
+    {type:'insight', text:'This is unusually early for you to be up'},
+    {type:'action', text:'Started the kettle'},
+    {type:'sense', text:'Detected one person in the kitchen'},
+    {type:'action', text:'Switched to warm white light'},
+    {type:'insight', text:'Tuesdays are usually quieter than this'},
+    {type:'sense', text:'Ambient sound dropped below 30dB'},
+    {type:'action', text:"Paused notifications on the shared screen"},
+    {type:'sense', text:'Light levels rising — sunrise detected'},
+    {type:'insight', text:'Routine model updated with this week\'s pattern'}
+  ];
+
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function timestamp(){
+    var d = new Date();
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+
+  function pushFeedEntry(item, animate){
+    if(!feedEl) return;
+    var row = document.createElement('div');
+    row.className = 'lm-feed-row lm-feed-' + item.type;
+    row.innerHTML = '<span class="lm-feed-time">' + timestamp() + '</span><span class="lm-feed-dot"></span><span class="lm-feed-text">' + item.text + '</span>';
+    feedEl.insertBefore(row, feedEl.firstChild);
+    if(animate === false || reduceMotion){
+      row.classList.add('show');
+    } else {
+      requestAnimationFrame(function(){ row.classList.add('show'); });
+    }
+    while(feedEl.children.length > 6){
+      feedEl.removeChild(feedEl.lastChild);
+    }
+  }
+
+  function randomFeedEntry(){
+    return feedActions[Math.floor(Math.random()*feedActions.length)];
+  }
+
+  // Seed the feed so it isn't empty on load
+  for(var fi=0; fi<4; fi++){ pushFeedEntry(randomFeedEntry(), false); }
+
+  function scheduleFeed(){
+    var delay = 5000 + Math.random()*4000;
+    setTimeout(function(){
+      pushFeedEntry(randomFeedEntry());
+      scheduleFeed();
+    }, delay);
+  }
+  scheduleFeed();
+
+  // Live telemetry under each sense card, drifting on its own
+  var senseStats = { voice:34, light:280, presence:2, routine:92 };
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+  function drift(v, min, max, step){ return clamp(v + (Math.random()-0.5)*step, min, max); }
+  function renderSenseStats(){
+    var elVoice = document.getElementById('lm-stat-voice');
+    var elLight = document.getElementById('lm-stat-light');
+    var elPresence = document.getElementById('lm-stat-presence');
+    var elRoutine = document.getElementById('lm-stat-routine');
+    if(elVoice) elVoice.textContent = Math.round(senseStats.voice) + ' dB';
+    if(elLight) elLight.textContent = Math.round(senseStats.light) + ' lux';
+    if(elPresence) elPresence.textContent = Math.round(senseStats.presence) + ' home';
+    if(elRoutine) elRoutine.textContent = Math.round(senseStats.routine) + '% confidence';
+  }
+  renderSenseStats();
+  setInterval(function(){
+    senseStats.voice = drift(senseStats.voice, 22, 48, 6);
+    senseStats.light = drift(senseStats.light, 60, 680, 70);
+    if(Math.random() < 0.12){ senseStats.presence = senseStats.presence >= 2 ? 1 : 2; }
+    senseStats.routine = drift(senseStats.routine, 76, 99, 3);
+    renderSenseStats();
+  }, 3200);
+
+  // Agent status labels cycle independently, like four specialists with their own pace
+  (function(){
+    var agentStates = ['active', 'predicting', 'listening', 'syncing', 'idle'];
+    var ids = ['lm-agent-status-planning', 'lm-agent-status-memory', 'lm-agent-status-energy', 'lm-agent-status-comfort'];
+    ids.forEach(function(id, i){
+      var el = document.getElementById(id);
+      if(!el) return;
+      function cycle(){
+        el.style.opacity = 0;
+        setTimeout(function(){
+          el.textContent = agentStates[Math.floor(Math.random()*agentStates.length)];
+          el.style.opacity = 1;
+        }, 200);
+      }
+      setInterval(cycle, 4000 + i*900);
+    });
+  })();
+
+  // Agent stats row — predictions and confidence drifting on their own
+  (function(){
+    var predEl = document.getElementById('lm-stat-predictions');
+    var confEl = document.getElementById('lm-stat-confidence');
+    var predictions = 2481;
+    var confidence = 97.2;
+    function render(){
+      if(predEl) predEl.textContent = predictions.toLocaleString('en-US');
+      if(confEl) confEl.textContent = confidence.toFixed(1) + '%';
+    }
+    render();
+    setInterval(function(){
+      predictions += 1 + Math.floor(Math.random()*2);
+      confidence = clamp(confidence + (Math.random()-0.5)*0.6, 94, 99.4);
+      render();
+    }, 5000 + Math.random()*3000);
+  })();
+
+  // Autonomous thought stream — chains of reasoning that build, then reset
+  (function(){
+    var stepsEl = document.getElementById('lm-reason-steps');
+    if(!stepsEl) return;
+    var chains = [
+      ['Occupancy increased in the living room', 'Predicting a lighting adjustment', 'Confidence 92%', 'Action executed'],
+      ['Ambient noise dropped below 30dB', 'Cross-checking the evening routine', 'Confidence 88%', 'Holding — no action needed'],
+      ['Office call started', 'Predicting a volume change nearby', 'Confidence 95%', 'Hallway speaker muted'],
+      ['Light levels rising at the east window', 'Matching against sunrise pattern', 'Confidence 97%', 'Bedroom glow softened'],
+      ['Routine model flagged a deviation', 'Comparing against the last 6 Tuesdays', 'Confidence 81%', 'Logged, no action taken']
+    ];
+    var chainIndex = 0;
+
+    function pad2b(n){ return String(n).padStart(2,'0'); }
+    function ts(){
+      var d = new Date();
+      return pad2b(d.getHours()) + ':' + pad2b(d.getMinutes());
+    }
+
+    function runChain(){
+      stepsEl.innerHTML = '';
+      var chain = chains[chainIndex % chains.length];
+      chainIndex++;
+      var i = 0;
+      function addStep(){
+        if(i >= chain.length){
+          setTimeout(runChain, 4200);
+          return;
+        }
+        var row = document.createElement('div');
+        row.className = 'lm-reason-step';
+        row.innerHTML = '<span class="lm-reason-time">' + ts() + '</span><span class="lm-reason-text">' + chain[i] + '</span>';
+        stepsEl.appendChild(row);
+        if(reduceMotion){
+          row.classList.add('show');
+        } else {
+          requestAnimationFrame(function(){ row.classList.add('show'); });
+        }
+        i++;
+        setTimeout(addStep, 1100);
+      }
+      addStep();
+    }
+    runChain();
+  })();
+
+  // Time-of-day adaptive theme — the system tints itself to the real hour
+  (function(){
+    var hourNow = new Date().getHours();
+    var isNight = hourNow >= 19 || hourNow < 6;
+    if(isNight){
+      document.body.classList.add('lm-mode-night');
+      var chipText = document.getElementById('lm-live-chip-text');
+      if(chipText) chipText.textContent = 'SYSTEM ONLINE · NIGHT MODE';
+    }
+  })();
+
+  // Boot-sequence terminal — types once when the privacy panel comes into view
+  (function(){
+    var terminalBox = document.getElementById('lm-terminal');
+    var terminalOut = document.getElementById('lm-terminal-output');
+    if(!terminalBox || !terminalOut) return;
+    var bootLines = [
+      '> initializing sensors ........ ok',
+      '> loading routine model ....... ok',
+      '> presence check ............... ok',
+      '> network ....................... idle',
+      '> privacy mode .................. active'
+    ];
+    var triggered = false;
+    function typeBoot(){
+      var out = '';
+      var li = 0;
+      function nextLine(){
+        if(li >= bootLines.length){
+          terminalOut.innerHTML = out.replace(/\n/g,'<br>');
+          return;
+        }
+        var line = bootLines[li];
+        var ci = 0;
+        var iv = setInterval(function(){
+          out += line.charAt(ci);
+          terminalOut.innerHTML = out.replace(/\n/g,'<br>') + '<span class="lm-terminal-cursor"></span>';
+          ci++;
+          if(ci >= line.length){
+            clearInterval(iv);
+            out += '\n';
+            li++;
+            setTimeout(nextLine, 260);
+          }
+        }, 16);
+      }
+      nextLine();
+    }
+    if('IntersectionObserver' in window){
+      var tio = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting && !triggered){
+            triggered = true;
+            if(reduceMotion){
+              terminalOut.textContent = bootLines.join('\n');
+            } else {
+              typeBoot();
+            }
+            tio.disconnect();
+          }
+        });
+      }, {threshold:0.35});
+      tio.observe(terminalBox);
+    } else {
+      terminalOut.textContent = bootLines.join('\n');
+    }
+  })();
+
+  // Unprompted autonomous toast — Lumen reporting on itself, with no button involved
+  (function(){
+    var toast = document.getElementById('lm-toast');
+    var toastText = document.getElementById('lm-toast-text');
+    if(!toast || !toastText) return;
+    var toastMessages = [
+      'dimmed the kitchen light',
+      'lowered the music in the office',
+      'turned off the porch light',
+      'started the kettle',
+      'muted the hallway speaker',
+      'switched to a warmer light'
+    ];
+    function showToast(){
+      var action = toastMessages[Math.floor(Math.random()*toastMessages.length)];
+      toastText.innerHTML = '<strong>Lumen</strong> just ' + action + '.<span class="lm-toast-sub">You didn\'t have to ask.</span>';
+      toast.classList.add('show');
+      setTimeout(function(){ toast.classList.remove('show'); }, 6000);
+    }
+    setTimeout(function(){
+      showToast();
+      scheduleToast();
+    }, 5000);
+    function scheduleToast(){
+      var delay = 45000 + Math.random()*30000;
+      setTimeout(function(){
+        showToast();
+        scheduleToast();
+      }, delay);
+    }
+  })();
+
+  // Energy saved, quietly ticking up on its own
+  (function(){
+    var energyEl = document.getElementById('lm-footer-energy');
+    if(!energyEl) return;
+    var energySaved = 14.2;
+    function renderEnergy(){
+      energyEl.textContent = energySaved.toFixed(1);
+    }
+    renderEnergy();
+    function scheduleEnergyTick(){
+      setTimeout(function(){
+        energySaved += 0.1 + Math.random()*0.3;
+        renderEnergy();
+        scheduleEnergyTick();
+      }, 12000 + Math.random()*10000);
+    }
+    scheduleEnergyTick();
+  })();
+
+  // The browser tab itself reports in, even when you're not looking at the page
+  (function(){
+    var baseTitle = document.title;
+    var titleVariants = [
+      function(){ return baseTitle; },
+      function(){ return decisionsCount.toLocaleString('en-US') + ' decisions today · Lumen'; },
+      function(){ return 'System online · Lumen'; }
+    ];
+    var ti = 0;
+    setInterval(function(){
+      ti = (ti + 1) % titleVariants.length;
+      document.title = titleVariants[ti]();
+    }, 8000);
+  })();
+
+  // Demo bubble: thinking dots -> typewriter response, synced with orb pulse
+  var demoBtn = document.getElementById('lm-demo-btn');
+  var bubble = document.getElementById('lm-demo-bubble');
+  var thinking = document.getElementById('lm-thinking');
+  var demoText = document.getElementById('lm-demo-text');
+  var orbCore = document.getElementById('lm-orb-core');
+  var demoLine = "It's almost ten. The kitchen's quiet and the porch light's still on — want me to turn it off?";
+  var demoRunning = false;
+
+  function typeText(el, text, speed, done){
+    el.textContent = '';
+    el.classList.remove('lm-done');
+    var i = 0;
+    var iv = setInterval(function(){
+      el.textContent += text.charAt(i);
+      i++;
+      if(i >= text.length){
+        clearInterval(iv);
+        el.classList.add('lm-done');
+        if(done) done();
+      }
+    }, speed);
+  }
+
+  demoBtn.addEventListener('click', function(){
+    if(demoRunning) return;
+    demoRunning = true;
+    orbCore.classList.add('lm-pulse');
+    thinking.style.display = 'flex';
+    demoText.style.display = 'none';
+    bubble.classList.add('show');
+
+    var thinkDelay = reduceMotion ? 200 : 900;
+    setTimeout(function(){
+      thinking.style.display = 'none';
+      demoText.style.display = 'inline';
+      if(reduceMotion){
+        demoText.textContent = demoLine;
+        demoText.classList.add('lm-done');
+      } else {
+        typeText(demoText, demoLine, 28);
+      }
+    }, thinkDelay);
+
+    setTimeout(function(){ orbCore.classList.remove('lm-pulse'); }, thinkDelay + 1400);
+    setTimeout(function(){
+      bubble.classList.remove('show');
+      demoRunning = false;
+    }, thinkDelay + 5200);
+  });
+
+  // Orb tilt: mouse-driven when active, but drifts on its own ("looking around") when idle
+  var stage = document.getElementById('lm-orb-stage');
+  if(stage && !reduceMotion){
+    var hero = document.querySelector('.lm-hero');
+    var idleTimer = null;
+    var idleRAF = null;
+
+    function stopIdleDrift(){
+      if(idleRAF){ cancelAnimationFrame(idleRAF); idleRAF = null; }
+    }
+    function startIdleDrift(){
+      stopIdleDrift();
+      var start = performance.now();
+      function loop(t){
+        var elapsed = (t - start) / 1000;
+        var ry = Math.sin(elapsed * 0.25) * 7;
+        var rx = Math.cos(elapsed * 0.18) * 4.5;
+        stage.style.transform = 'rotateY(' + ry + 'deg) rotateX(' + (-rx) + 'deg)';
+        idleRAF = requestAnimationFrame(loop);
+      }
+      idleRAF = requestAnimationFrame(loop);
+    }
+    function scheduleIdleDrift(){
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(startIdleDrift, 2200);
+    }
+
+    hero.addEventListener('mousemove', function(e){
+      stopIdleDrift();
+      var rect = hero.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      stage.style.transform = 'rotateY(' + (x*10) + 'deg) rotateX(' + (-y*10) + 'deg)';
+      scheduleIdleDrift();
+    });
+    hero.addEventListener('mouseleave', function(){
+      scheduleIdleDrift();
+    });
+
+    // Nothing has touched it yet — it starts looking around on its own
+    scheduleIdleDrift();
+  }
+
+  // Scroll-reveal for sections, cards, rows and FAQ items
+  var revealEls = document.querySelectorAll('.lm-reveal');
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry, idx){
+        if(entry.isIntersecting){
+          var delay = (idx % 4) * 70;
+          entry.target.style.transitionDelay = delay + 'ms';
+          entry.target.classList.add('lm-revealed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.15, rootMargin:'0px 0px -40px 0px'});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('lm-revealed'); });
+  }
+
+  // Ambient neural-network canvas in the hero
+  (function(){
+    var canvas = document.getElementById('lm-network');
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var hero = document.querySelector('.lm-hero');
+    var nodes = [];
+    var nodeCount = window.innerWidth < 640 ? 18 : 42;
+    var mouse = {x:null, y:null};
+    var colors = ['124,158,255', '255,143,206', '124,255,214'];
+
+    function resize(){
+      var rect = hero.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    }
+
+    function makeNodes(){
+      var rect = hero.getBoundingClientRect();
+      nodes = [];
+      for(var i=0;i<nodeCount;i++){
+        nodes.push({
+          x: Math.random()*rect.width,
+          y: Math.random()*rect.height,
+          vx: (Math.random()-0.5)*0.18,
+          vy: (Math.random()-0.5)*0.18,
+          c: colors[i % colors.length]
+        });
+      }
+    }
+
+    function step(){
+      var rect = hero.getBoundingClientRect();
+      ctx.clearRect(0,0,rect.width,rect.height);
+      for(var i=0;i<nodes.length;i++){
+        var n = nodes[i];
+        n.x += n.vx; n.y += n.vy;
+        if(n.x < 0 || n.x > rect.width) n.vx *= -1;
+        if(n.y < 0 || n.y > rect.height) n.vy *= -1;
+        if(mouse.x !== null){
+          var dx = n.x - mouse.x, dy = n.y - mouse.y;
+          var dist = Math.sqrt(dx*dx+dy*dy);
+          if(dist < 120){
+            n.x += dx/dist*0.6;
+            n.y += dy/dist*0.6;
+          }
+        }
+      }
+      for(var i=0;i<nodes.length;i++){
+        for(var j=i+1;j<nodes.length;j++){
+          var a = nodes[i], b = nodes[j];
+          var dx = a.x-b.x, dy = a.y-b.y;
+          var d = Math.sqrt(dx*dx+dy*dy);
+          if(d < 150){
+            ctx.strokeStyle = 'rgba(' + a.c + ',' + (0.12 * (1 - d/150)) + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x,a.y);
+            ctx.lineTo(b.x,b.y);
+            ctx.stroke();
+          }
+        }
+      }
+      for(var i=0;i<nodes.length;i++){
+        var n = nodes[i];
+        ctx.fillStyle = 'rgba(' + n.c + ',0.55)';
+        ctx.beginPath();
+        ctx.arc(n.x,n.y,1.6,0,Math.PI*2);
+        ctx.fill();
+      }
+      if(!reduceMotion) requestAnimationFrame(step);
+    }
+
+    resize();
+    makeNodes();
+    window.addEventListener('resize', function(){ resize(); makeNodes(); });
+    hero.addEventListener('mousemove', function(e){
+      var rect = hero.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    hero.addEventListener('mouseleave', function(){ mouse.x = null; mouse.y = null; });
+
+    if(reduceMotion){
+      step(); // draw a single static frame, no rAF loop
+    } else {
+      requestAnimationFrame(step);
+    }
+  })();
+</script>
+
+</body>
+</html>
